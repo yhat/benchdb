@@ -1,2 +1,2 @@
 # gobenchdb
-Store your go test benchmark data in a database
+Store go test bench data in a database
