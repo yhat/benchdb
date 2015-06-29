@@ -58,7 +58,7 @@ func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
         VALUES
         ($1, $2, $3, $4, $5, $6)
         `, table)
-	ts := time.Now().Unix()
+	ts := time.Now().UTC().String()
 	name := strings.TrimPrefix(strings.TrimSpace(b.Name), "Benchmark")
 	_, err = tx.Exec(q,
 		ts, name, b.N, b.NsPerOp, b.AllocedBytesPerOp, b.AllocsPerOp)
@@ -77,6 +77,7 @@ func (benchdb *BenchDB) Run() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("could not connect to db: %v", err)
 	}
+	defer sqlDB.Close()
 	benchdb.dbConn = sqlDB
 
 	// Runs exec a subprocess for go test bench command and write
