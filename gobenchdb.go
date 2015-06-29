@@ -18,7 +18,7 @@ func main() {
 	// TODO: convert this to write to a sql db
 	writer := csv.NewWriter(os.Stdout)
 	defer writer.Flush()
-	n, err := (&benchdb.BenchDB{
+	_, err := (&benchdb.BenchDB{
 		Regex:     *suite,
 		Driver:    "mysql",
 		ConnStr:   "mysql://mysql@passs/fooDB",
@@ -28,5 +28,4 @@ func main() {
 		fmt.Printf("%v", err)
 		os.Exit(2)
 	}
-	fmt.Printf("wrote %v lines to db", n)
 }
