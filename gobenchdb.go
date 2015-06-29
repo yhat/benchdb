@@ -9,11 +9,14 @@ import (
 	"github.com/yhat/gobenchdb/benchdb"
 )
 
+var (
+	testBench = flag.String("test.bench", ".", "benchmark regexp")
+	conn      = flag.String("conn", "", "postgres database connection string")
+	table     = flag.String("table", "", "postgres table name")
+)
+
 func main() {
 	// Parse command line args
-	suite := flag.String("test.bench", ".", "benchmark regexp")
-	connStr := flag.String("conn", "", "postgres database connection string")
-	dbtable := flag.String("table", "", "postgres table")
 	flag.Parse()
 
 	// write data in csv format to stdout
@@ -21,10 +24,10 @@ func main() {
 	writer := csv.NewWriter(os.Stdout)
 	defer writer.Flush()
 	_, err := (&benchdb.BenchDB{
-		Regex:     *suite,
+		Regex:     *testBench,
 		Driver:    "postgres",
-		ConnStr:   *connStr,
-		TableName: *dbtable,
+		ConnStr:   *conn,
+		TableName: *table,
 		CsvWriter: *writer,
 	}).Run()
 	if err != nil {
