@@ -57,10 +57,14 @@ func (benchdb *BenchDB) WriteBenchSet(benchSet parse.Set) (int, error) {
 // current directory. By default it does not run unit tests. It returns
 // parsed benchmark stats in a parse.Set and returns any error encountered.
 func (benchdb *BenchDB) Run() (int, error) {
+	// Connect to an sql database
 	_, err := sql.Open(benchdb.Driver, benchdb.ConnStr)
 	if err != nil {
 		return 0, fmt.Errorf("could not connect to db: %v", err)
 	}
+
+	// Runs exec a subprocess for go test bench command and write
+	// to both stdout and a byte buffer.
 	cmd := exec.Command("go", "test", "-bench", benchdb.Regex, "-test.run", "XXX", "-benchmem")
 	var out bytes.Buffer
 	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
@@ -68,13 +72,17 @@ func (benchdb *BenchDB) Run() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("command failed: %v", err)
 	}
+
+	// Parse stdout into a parse.Set
 	benchSet, err := parse.ParseSet(&out)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse benchmark data: %v", err)
 	}
+
+	// Writes parse set to sql database
 	n, err := benchdb.WriteBenchSet(benchSet)
 	if err != nil {
-		return 0, fmt.Errorf("failed to write benchSet: %v", err)
+		return 0, fmt.Errorf("failed to write benchSet to db: %v", err)
 	}
 	return n, nil
 }
