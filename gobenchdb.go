@@ -10,12 +10,24 @@ import (
 )
 
 var (
-	testBench = flag.String("test.bench", ".", "benchmark regexp")
 	conn      = flag.String("conn", "", "postgres database connection string")
 	table     = flag.String("table", "", "postgres table name")
+	testBench = flag.String("test.bench", ".",
+		"run only those benchmarks matching the regular expression")
 )
 
+var usage = `Usage: gobenchdb [options...]
+
+Options:
+  -conn        postgres database connection string
+  -table       postgres table name
+  -test.bench  run only those benchmarks matching the regular expression`
+
 func main() {
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, usage)
+	}
+
 	// Parse command line args
 	flag.Parse()
 
@@ -31,7 +43,7 @@ func main() {
 		CsvWriter: *writer,
 	}).Run()
 	if err != nil {
-		fmt.Printf("%v", err)
+		flag.Usage()
 		os.Exit(2)
 	}
 }
