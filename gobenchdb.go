@@ -10,8 +10,10 @@ import (
 )
 
 func main() {
-	// regex for benchmark suite
-	suite := flag.String("-test.bench", ".", "benchmark regexp")
+	// Parse command line args
+	suite := flag.String("test.bench", ".", "benchmark regexp")
+	connStr := flag.String("conn", "", "postgres database connection string")
+	dbtable := flag.String("table", "", "postgres table")
 	flag.Parse()
 
 	// write data in csv format to stdout
@@ -20,8 +22,9 @@ func main() {
 	defer writer.Flush()
 	_, err := (&benchdb.BenchDB{
 		Regex:     *suite,
-		Driver:    "mysql",
-		ConnStr:   "mysql://mysql@passs/fooDB",
+		Driver:    "postgres",
+		ConnStr:   *connStr,
+		TableName: *dbtable,
 		CsvWriter: *writer,
 	}).Run()
 	if err != nil {
