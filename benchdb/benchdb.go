@@ -34,9 +34,9 @@ type BenchDB struct {
 
 // WriteBenchSet writes data from a parsed benchmark set to a DB table and a csv.Writer
 // It returns the number of benchmark tests written and any error encountered.
-func (benchdb *BenchDB) WriteBenchSet(benchset parse.Set) (int, error) {
+func (benchdb *BenchDB) WriteBenchSet(benchSet parse.Set) (int, error) {
 	cnt := 0
-	for _, v := range benchset {
+	for _, v := range benchSet {
 		n := len(v)
 		for i := 0; i < n; i++ {
 			// TODO: Convert parsing to use data from parse.Benchmark
