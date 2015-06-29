@@ -1,54 +1,32 @@
 package main
 
 import (
-	"bytes"
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"io"
-	"log"
 	"os"
-	"os/exec"
-	"strings"
 
-	"golang.org/x/tools/benchmark/parse"
+	"github.com/yhat/gobenchdb/benchdb"
 )
 
-func runBenchmark(regexpr string) (parse.Set, error) {
-	cmd := exec.Command("go", "test", "-bench", regexpr, "-test.run", "XXX", "-benchmem")
-	var out bytes.Buffer
-	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
-	err := cmd.Run()
-	if err != nil {
-		log.Printf("command failed: %v", err)
-		return nil, err
-	}
-	bench, err := parse.ParseSet(&out)
-	if err != nil {
-		log.Printf("failed to parse benchmark data: %v", err)
-		return nil, err
-	}
-	return bench, nil
-}
-
 func main() {
+	// regex for benchmark suite
 	suite := flag.String("-test.bench", ".", "benchmark regexp")
 	flag.Parse()
-	b, err := runBenchmark(*suite)
+
+	// write data in csv format to stdout
+	// TODO: convert this to write to a sql db
+	writer := csv.NewWriter(os.Stdout)
+	defer writer.Flush()
+	n, err := (&benchdb.BenchDB{
+		Regex:     *suite,
+		Driver:    "mysql",
+		ConnStr:   "mysql://mysql@passs/fooDB",
+		CsvWriter: *writer,
+	}).Run()
 	if err != nil {
 		fmt.Printf("%v", err)
+		os.Exit(2)
 	}
-	writer := csv.NewWriter(os.Stdout)
-	for _, v := range b {
-		n := len(v)
-		for i := 0; i < n; i++ {
-			row := strings.Split(v[i].String(), " ")
-			err = writer.Write(row)
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
-		}
-	}
-	writer.Flush()
+	fmt.Printf("wrote %v lines to db", n)
 }
