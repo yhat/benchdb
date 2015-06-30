@@ -39,13 +39,12 @@ func main() {
 		UsageExit("database table must be specified")
 	}
 
-	// Initalize a BenchDB to and run benchmarks.
-	_, err := (&benchdb.BenchDB{
-		Regex:     tregex,
+	// Initalize a BenchPSQL to and run benchmarks.
+	err := (&benchdb.BenchPSQL{
 		Driver:    Postgres,
 		ConnStr:   c,
 		TableName: t,
-	}).Run()
+	}).Run(tregex)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())
 		os.Exit(1)

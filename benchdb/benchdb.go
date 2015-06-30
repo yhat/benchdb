@@ -15,10 +15,27 @@ import (
 	"golang.org/x/tools/benchmark/parse"
 )
 
-// BenchDB represents a postgresql database that can be used to write
-// benchmark data to.
-type BenchDB struct {
-	Regex     string // regex used to run benchmark sets
+// A BenchDB manges the execution of benchmark tests using go test and
+// writing a parse.Set to a database.
+//
+// Implementations of BenchDB for different databases are allowed by way
+// of the WriteSet method.
+type BenchDB interface {
+	// Run executes go test bench for benchmarks matching regex in the current
+	// directory. By default it does not run unit tests by way of setting test.run
+	// to XXX in the call to go test. It also parses the benchSet and calls WriteSet
+	// to write the benchmark data to a database. It returns any error encountered.
+	Run(regex string) error
+
+	// WriteSet is responsible for opening a postgres database connection and writing
+	// a parsed benchSet to a db table. It closes the connection, returns the number of
+	// benchmark tests written, and any error encountered.
+	WriteSet(parse.Set) (int, error)
+}
+
+// BenchPSQL represents a BenchDB that writes benchmarks to a postgres
+// database.
+type BenchPSQL struct {
 	Driver    string // database driver name
 	ConnStr   string // sql connection string
 	TableName string // database table name
@@ -26,13 +43,41 @@ type BenchDB struct {
 	dbConn *sql.DB
 }
 
-// WriteBenchSet is responsible for opening a postgres database connection and writing
+// Run runs go test benchmarks matching regex in the current directory and writes
+// benchmark data to a PSQL database by calling WriteSet. It returns any error
+// encountered.
+func (benchdb *BenchPSQL) Run(regex string) error {
+	// Exec a subprocess for go test bench and write
+	// to both stdout and a byte buffer.
+	cmd := exec.Command("go", "test", "-bench", regex,
+		"-test.run", "XXX", "-benchmem")
+	var out bytes.Buffer
+	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("command failed: %v", err)
+	}
+
+	benchSet, err := parse.ParseSet(&out)
+	if err != nil {
+		return fmt.Errorf("failed to parse benchmark data: %v", err)
+	}
+
+	// Writes parse set to sql database.
+	_, err = benchdb.WriteSet(benchSet)
+	if err != nil {
+		return fmt.Errorf("failed to write benchSet to db: %v", err)
+	}
+	return nil
+}
+
+// WriteSet is responsible for opening a postgres database connection and writing
 // a parsed benchSet to a db table. It closes the connection, returns the number of
 // benchmark tests written, and any error encountered.
 //
 // A new sql transaction is created and committed per Benchmark in benchSet. This way if a
 // db failure occurs all data from the benchSet is not lost.
-func (benchdb *BenchDB) WriteBenchSet(benchSet parse.Set) (int, error) {
+func (benchdb *BenchPSQL) WriteSet(benchSet parse.Set) (int, error) {
 	sqlDB, err := sql.Open(benchdb.Driver, benchdb.ConnStr)
 	if err != nil {
 		return 0, fmt.Errorf("could not connect to db: %v", err)
@@ -80,34 +125,4 @@ func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
 		return err
 	}
 	return tx.Commit()
-}
-
-// Run executes go test bench for benchmarks that match Regex in the current directory.
-// By default it does not run unit tests by way of setting test.run to XXX in the call
-// to go test. It also parses the benchSet and calls WriteBenchSet to write the benchmark
-// data to a postgresql database. It returns the number of benchmarks written and any
-// error encountered.
-func (benchdb *BenchDB) Run() (int, error) {
-	// Exec a subprocess for go test bench and write
-	// to both stdout and a byte buffer.
-	cmd := exec.Command("go", "test", "-bench", benchdb.Regex,
-		"-test.run", "XXX", "-benchmem")
-	var out bytes.Buffer
-	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
-	err := cmd.Run()
-	if err != nil {
-		return 0, fmt.Errorf("command failed: %v", err)
-	}
-
-	benchSet, err := parse.ParseSet(&out)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse benchmark data: %v", err)
-	}
-
-	// Writes parse set to sql database.
-	n, err := benchdb.WriteBenchSet(benchSet)
-	if err != nil {
-		return 0, fmt.Errorf("failed to write benchSet to db: %v", err)
-	}
-	return n, nil
 }
