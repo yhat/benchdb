@@ -2,7 +2,9 @@ package benchdb
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -75,6 +77,22 @@ func (benchdb *BenchPSQL) Run(regex string) error {
 	return nil
 }
 
+func latestGitSha() (string, error) {
+	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get latest git sha: %v\n", err)
+	}
+	return string(out), nil
+}
+
+func uuid() (string, error) {
+	b := make([]byte, 16)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
 // WriteSet is responsible for opening a postgres database connection and writing
 // a parsed benchSet to a db table. It closes the connection, returns the number of
 // benchmark tests written, and any error encountered.
@@ -89,12 +107,17 @@ func (benchdb *BenchPSQL) WriteSet(benchSet parse.Set) (int, error) {
 	defer sqlDB.Close()
 	benchdb.dbConn = sqlDB
 
+	batchId, err := uuid()
+	if err != nil {
+		return 0, fmt.Errorf("could not generate batch id: %v\n", err)
+	}
+
 	cnt := 0
 	for _, b := range benchSet {
 		n := len(b)
 		for i := 0; i < n; i++ {
 			val := b[i]
-			err := saveBenchmark(benchdb.dbConn, benchdb.TableName, *val)
+			err := saveBenchmark(benchdb.dbConn, benchdb.TableName, batchId, *val)
 			if err != nil {
 				return 0, fmt.Errorf("failed to save benchmark: %v", err)
 			}
@@ -104,7 +127,7 @@ func (benchdb *BenchPSQL) WriteSet(benchSet parse.Set) (int, error) {
 	return cnt, nil
 }
 
-func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
+func saveBenchmark(dbConn *sql.DB, table, batchId string, b parse.Benchmark) error {
 	// Create a transaction per Benchmark.
 	tx, err := dbConn.Begin()
 	if err != nil {
@@ -112,11 +135,16 @@ func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
 	}
 	defer tx.Rollback()
 
+	sha, err := latestGitSha()
+	if err != nil {
+		return err
+	}
+
 	q := fmt.Sprintf(`
         INSERT INTO %s
-        (datetime, name, n, ns_op, allocated_bytes_op, allocs_op)
+        (batch_id, latest_sha, datetime, name, n, ns_op, allocated_bytes_op, allocs_op)
         VALUES
-        ($1, $2, $3, $4, $5, $6)
+        ($1, $2, $3, $4, $5, $6, $7, $8)
         `, table)
 
 	// Strips of leading Benchmark string in Benchmark.Name
@@ -124,7 +152,7 @@ func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
 	ts := time.Now().UTC()
 
 	_, err = tx.Exec(q,
-		ts, name, b.N, b.NsPerOp, b.AllocedBytesPerOp, b.AllocsPerOp)
+		batchId, sha, ts, name, b.N, b.NsPerOp, b.AllocedBytesPerOp, b.AllocsPerOp)
 	if err != nil {
 		return err
 	}
