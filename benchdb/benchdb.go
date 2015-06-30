@@ -52,10 +52,13 @@ func (benchdb *BenchPSQL) Run(regex string) error {
 	cmd := exec.Command("go", "test", "-bench", regex,
 		"-test.run", "XXX", "-benchmem")
 	var out bytes.Buffer
+	var stderr bytes.Buffer
 	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
+	cmd.Stderr = io.Writer(&stderr)
 	err := cmd.Run()
 	if err != nil {
 		fmt.Printf("%s", out.String())
+		fmt.Printf("%s", stderr.String())
 		return fmt.Errorf("command failed: %v", err)
 	}
 
