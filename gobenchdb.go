@@ -25,18 +25,6 @@ Options:
   -table       postgres table name
   -test.bench  run only those benchmarks matching the regular expression`
 
-func printUsageExit(message string) {
-	// inspired by rakyll/boom
-	if message != "" {
-		fmt.Fprintf(os.Stderr, message)
-		fmt.Fprintf(os.Stderr, "\n\n")
-
-	}
-	flag.Usage()
-	fmt.Fprintf(os.Stderr, "\n")
-	os.Exit(1)
-}
-
 func main() {
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, usage)
@@ -49,10 +37,11 @@ func main() {
 	tregex := *testBench
 
 	if c == "" {
-		printUsageExit("database conn must be specified")
+		UsageAndExit("database conn must be specified")
+
 	}
 	if t == "" {
-		printUsageExit("database table must be specified")
+		UsageAndExit("database table must be specified")
 	}
 
 	// write data in csv format to stdout
@@ -67,6 +56,16 @@ func main() {
 		CsvWriter: *writer,
 	}).Run()
 	if err != nil {
-		printUsageExit(err.Error())
+		UsageAndExit(err.Error())
 	}
+}
+
+func UsageAndExit(message string) {
+	if message != "" {
+		fmt.Fprintf(os.Stderr, message)
+		fmt.Fprintf(os.Stderr, "\n")
+	}
+	flag.Usage()
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
 }
