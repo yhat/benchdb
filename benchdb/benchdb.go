@@ -55,6 +55,7 @@ func (benchdb *BenchPSQL) Run(regex string) error {
 	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
 	err := cmd.Run()
 	if err != nil {
+		fmt.Printf("%s", out.String())
 		return fmt.Errorf("command failed: %v", err)
 	}
 
