@@ -26,9 +26,9 @@ type BenchDB struct {
 	dbConn *sql.DB
 }
 
-// WriteBenchSet is responsible for managing the postgres sql connection and writing
-// a parsed benchSet to a postrges table. It closes the postgres sql connection,
-// returns the number of benchmark tests written, and any error encountered.
+// WriteBenchSet is responsible for opening a postgres database connection and writing
+// a parsed benchSet to a db table. It closes the connection, returns the number of
+// benchmark tests written, and any error encountered.
 func (benchdb *BenchDB) WriteBenchSet(benchSet parse.Set) (int, error) {
 	sqlDB, err := sql.Open(benchdb.Driver, benchdb.ConnStr)
 	if err != nil {
