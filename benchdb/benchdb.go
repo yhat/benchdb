@@ -29,6 +29,9 @@ type BenchDB struct {
 // WriteBenchSet is responsible for opening a postgres database connection and writing
 // a parsed benchSet to a db table. It closes the connection, returns the number of
 // benchmark tests written, and any error encountered.
+//
+// A new sql transaction is created and committed per Benchmark in benchSet. This way if a
+// db failure occurs all data from the benchSet is not lost.
 func (benchdb *BenchDB) WriteBenchSet(benchSet parse.Set) (int, error) {
 	sqlDB, err := sql.Open(benchdb.Driver, benchdb.ConnStr)
 	if err != nil {
@@ -53,19 +56,24 @@ func (benchdb *BenchDB) WriteBenchSet(benchSet parse.Set) (int, error) {
 }
 
 func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
+	// Create a transaction per Benchmark and commit it.
 	tx, err := dbConn.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+
 	q := fmt.Sprintf(`
         INSERT INTO %s
         (datetime, name, n, ns_op, allocated_bytes_op, allocs_op)
         VALUES
         ($1, $2, $3, $4, $5, $6)
         `, table)
+
 	ts := time.Now().UTC()
+	// Strips of leading Benchmark string in Benchmark.Name
 	name := strings.TrimPrefix(strings.TrimSpace(b.Name), "Benchmark")
+
 	_, err = tx.Exec(q,
 		ts, name, b.N, b.NsPerOp, b.AllocedBytesPerOp, b.AllocsPerOp)
 	if err != nil {
