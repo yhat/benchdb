@@ -77,12 +77,14 @@ func (benchdb *BenchPSQL) Run(regex string) error {
 	return nil
 }
 
+const nsha = 7
+
 func latestGitSha() (string, error) {
 	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest git sha: %v\n", err)
 	}
-	return string(out), nil
+	return string(out[:nsha]), nil
 }
 
 func uuid() (string, error) {
