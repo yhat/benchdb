@@ -56,7 +56,7 @@ func (benchdb *BenchDB) WriteBenchSet(benchSet parse.Set) (int, error) {
 }
 
 func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
-	// Create a transaction per Benchmark and commit it.
+	// Create a transaction per Benchmark.
 	tx, err := dbConn.Begin()
 	if err != nil {
 		return err
@@ -70,9 +70,9 @@ func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
         ($1, $2, $3, $4, $5, $6)
         `, table)
 
-	ts := time.Now().UTC()
 	// Strips of leading Benchmark string in Benchmark.Name
 	name := strings.TrimPrefix(strings.TrimSpace(b.Name), "Benchmark")
+	ts := time.Now().UTC()
 
 	_, err = tx.Exec(q,
 		ts, name, b.N, b.NsPerOp, b.AllocedBytesPerOp, b.AllocsPerOp)
@@ -82,13 +82,13 @@ func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
 	return tx.Commit()
 }
 
-// Run runs all of the go test benchmarks that match regexpr in the
-// current directory. By default it does not run unit tests by way of setting
-// test.run to XXX. It is also responsible for parsing the benchmark set and calls
-// WriteBenchSet to write the benchmark data to a postgresql database. It returns
-// any error encountered.
+// Run executes go test bench for benchmarks that match Regex in the current directory.
+// By default it does not run unit tests by way of setting test.run to XXX in the call
+// to go test. It also parses the benchSet and calls WriteBenchSet to write the benchmark
+// data to a postgresql database. It returns the number of benchmarks written and any
+// error encountered.
 func (benchdb *BenchDB) Run() (int, error) {
-	// Exec a subprocess for go test bench command and write
+	// Exec a subprocess for go test bench and write
 	// to both stdout and a byte buffer.
 	cmd := exec.Command("go", "test", "-bench", benchdb.Regex,
 		"-test.run", "XXX", "-benchmem")
@@ -99,7 +99,6 @@ func (benchdb *BenchDB) Run() (int, error) {
 		return 0, fmt.Errorf("command failed: %v", err)
 	}
 
-	// Parse stdout into a parse Set.
 	benchSet, err := parse.ParseSet(&out)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse benchmark data: %v", err)
