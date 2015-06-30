@@ -54,11 +54,11 @@ func saveBenchmark(dbConn *sql.DB, table string, b parse.Benchmark) error {
 	defer tx.Rollback()
 	q := fmt.Sprintf(`
         INSERT INTO %s
-        (timestamp, benchname, n, ns_op, allocated_bytes_op, allocs_op)
+        (datetime, name, n, ns_op, allocated_bytes_op, allocs_op)
         VALUES
         ($1, $2, $3, $4, $5, $6)
         `, table)
-	ts := time.Now().UTC().String()
+	ts := time.Now().UTC()
 	name := strings.TrimPrefix(strings.TrimSpace(b.Name), "Benchmark")
 	_, err = tx.Exec(q,
 		ts, name, b.N, b.NsPerOp, b.AllocedBytesPerOp, b.AllocsPerOp)
