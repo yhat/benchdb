@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/csv"
 	"flag"
 	"fmt"
 	"os"
@@ -40,16 +39,11 @@ func main() {
 		UsageExit("database table must be specified")
 	}
 
-	// write data in csv format to stdout
-	// TODO: convert this to write to a sql db
-	writer := csv.NewWriter(os.Stdout)
-	defer writer.Flush()
 	_, err := (&benchdb.BenchDB{
 		Regex:     tregex,
 		Driver:    Postgres,
 		ConnStr:   c,
 		TableName: t,
-		CsvWriter: *writer,
 	}).Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())

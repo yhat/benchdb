@@ -3,7 +3,6 @@ package benchdb
 import (
 	"bytes"
 	"database/sql"
-	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
@@ -19,11 +18,10 @@ import (
 // DB represents a sql database that can be used to write
 // benchmark data to.
 type BenchDB struct {
-	Regex     string     // regex used to run benchmark sets
-	Driver    string     // database driver name
-	ConnStr   string     // sql connection string
-	TableName string     // database table name
-	CsvWriter csv.Writer // formats benchmark data when writing to stdout
+	Regex     string // regex used to run benchmark sets
+	Driver    string // database driver name
+	ConnStr   string // sql connection string
+	TableName string // database table name
 
 	dbConn *sql.DB
 }
