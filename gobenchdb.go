@@ -26,10 +26,6 @@ Options:
   -test.bench  run only those benchmarks matching the regular expression`
 
 func main() {
-	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, usage)
-	}
-
 	// Parse command line args
 	flag.Parse()
 	c := *conn
@@ -37,11 +33,11 @@ func main() {
 	tregex := *testBench
 
 	if c == "" {
-		UsageAndExit("database conn must be specified")
+		UsageExit("database conn must be specified")
 
 	}
 	if t == "" {
-		UsageAndExit("database table must be specified")
+		UsageExit("database table must be specified")
 	}
 
 	// write data in csv format to stdout
@@ -56,16 +52,16 @@ func main() {
 		CsvWriter: *writer,
 	}).Run()
 	if err != nil {
-		UsageAndExit(err.Error())
+		UsageExit(err.Error())
 	}
 }
 
-func UsageAndExit(message string) {
+func UsageExit(message string) {
 	if message != "" {
 		fmt.Fprintf(os.Stderr, message)
 		fmt.Fprintf(os.Stderr, "\n")
 	}
-	flag.Usage()
+	fmt.Fprintf(os.Stderr, usage)
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(1)
 }
