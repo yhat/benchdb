@@ -52,7 +52,8 @@ func main() {
 		CsvWriter: *writer,
 	}).Run()
 	if err != nil {
-		UsageExit(err.Error())
+		fmt.Fprintf(os.Stderr, err.Error())
+		os.Exit(1)
 	}
 }
 
