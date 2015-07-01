@@ -76,4 +76,22 @@ identify separate benchmark test runs.
 
 Thats it!
 
+# Database Schema
+
+gobenchdb assumes a table schema of the form.
+
+```sql
+# postgres
+CREATE TABLE IF NOT EXISTS ops2 (
+    id serial             primary key,
+    datetime              timestamp without time zone,                                                                                      
+    name                  varchar(50),
+    n                     integer,
+    ns_op                 double precision,
+    allocated_bytes_op    integer,
+    allocs_op             integer);
+```
+
 # Extending gobenchdb
+
+If you want to use gobenchdb but you wish to use a database besides postgres or sqlite3, you can implent the [BenchDB](https://godoc.org/github.com/yhat/gobenchdb/benchdb#BenchDB) interface in the [BenchDB package](https://godoc.org/github.com/yhat/gobenchdb/benchdb).
