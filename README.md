@@ -83,7 +83,9 @@ gobenchdb assumes a table schema of the form.
 ```sql
 # postgres
 CREATE TABLE IF NOT EXISTS ops2 (
-    id serial             primary key,
+    id                    serial primary key,
+    batch_id              varchar(50),
+    latest_sha            varchar(50),
     datetime              timestamp without time zone,                                                                                      
     name                  varchar(50),
     n                     integer,
