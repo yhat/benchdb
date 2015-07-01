@@ -146,7 +146,7 @@ func saveBenchmark(dbConn *sql.DB, table, batchId string, b parse.Benchmark) err
         ($1, $2, $3, $4, $5, $6, $7, $8)
         `, table)
 
-	// Strips of leading Benchmark string in Benchmark.Name
+	// Strips leading Benchmark string in Benchmark.Name
 	name := strings.TrimPrefix(strings.TrimSpace(b.Name), "Benchmark")
 	ts := time.Now().UTC()
 
