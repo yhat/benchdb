@@ -7,12 +7,7 @@ import (
 )
 
 func mySort(data sort.Interface, a, b int) {
-	// Insertion sort borrowed from the std library.
-	for i := a + 1; i < b; i++ {
-		for j := i; j > a && data.Less(j, j-1); j-- {
-			data.Swap(j, j-1)
-		}
-	}
+	sort.Sort(data)
 }
 
 func BenchmarkMySort1K(b *testing.B) {
