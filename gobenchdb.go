@@ -1,3 +1,7 @@
+// gobenchdb is a command line tool for running and storing go benchmark data in a
+// database. It runs the `go test -bench` command in the current working directory
+// and parses the output using the parse package. The parsed data is then written to
+// a sql database of your choice. data is then written to a sql database of your choice.
 package main
 
 import (
