@@ -75,3 +75,5 @@ Each gobenchdb run is assigned a unique batch_id and the first 7 characters of t
 identify separate benchmark test runs.
 
 Thats it!
+
+# Extending gobenchdb
