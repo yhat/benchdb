@@ -96,4 +96,4 @@ CREATE TABLE IF NOT EXISTS ops2 (
 
 # Extending gobenchdb
 
-If you want to use gobenchdb but you wish to use a database besides postgres or sqlite3, you can implent the [BenchDB](https://godoc.org/github.com/yhat/gobenchdb/benchdb#BenchDB) interface in the [BenchDB package](https://godoc.org/github.com/yhat/gobenchdb/benchdb).
+If you want to use gobenchdb but you wish to use a database besides postgres or sqlite3, you can implent the [BenchDB](https://godoc.org/github.com/yhat/gobenchdb/benchdb#BenchDB) interface in the [benchdb package](https://godoc.org/github.com/yhat/gobenchdb/benchdb).
