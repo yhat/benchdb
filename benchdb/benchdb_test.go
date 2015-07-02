@@ -1,7 +1,6 @@
 package benchdb
 
 import (
-	"fmt"
 	"math/rand"
 	"sort"
 	"testing"
@@ -23,7 +22,6 @@ func TestRunNoDBConn(t *testing.T) {
 		TableName: table,
 	}).Run()
 	if err == nil {
-		fmt.Println(err)
 		t.Errorf("expected failure due to no db connection")
 	}
 }
