@@ -23,11 +23,12 @@ import (
 // Implementations of BenchDB for different databases are allowed by way
 // of the WriteSet method.
 type BenchDB interface {
-	// Run executes go test bench for benchmarks matching regex in the current
-	// directory. By default it does not run unit tests by way of setting test.run
-	// to XXX in the call to go test. It also parses the benchSet and calls WriteSet
-	// to write the benchmark data to a database. It returns any error encountered.
-	Run(regex string) error
+	// Run executes go test bench for benchmarks matching a regex defined in
+	// BenchDBConfigthe current directory. By default it does not run unit tests
+	// by way of setting test.run to XXX in the call to go test. It also parses the
+	// benchSet and calls WriteSet to write the benchmark data to a database. It
+	// returns any error encountered.
+	Run() error
 
 	// WriteSet is responsible for opening a postgres database connection and writing
 	// a parsed benchSet to a db table. It closes the connection, returns the number of
@@ -35,12 +36,19 @@ type BenchDB interface {
 	WriteSet(parse.Set) (int, error)
 }
 
+// BenchDBConfig represents configuration data for BenchDB.
+type BenchDBConfig struct {
+	Regex  string // regex to run tests
+	ShaLen int    // number of latest git sha characters
+}
+
 // BenchPSQL represents a BenchDB that writes benchmarks to a postgres
 // database.
 type BenchPSQL struct {
-	Driver    string // database driver name
-	ConnStr   string // sql connection string
-	TableName string // database table name
+	Config    *BenchDBConfig // configuration for go test
+	Driver    string         // database driver name
+	ConnStr   string         // sql connection string
+	TableName string         // database table name
 
 	dbConn *sql.DB
 }
@@ -48,10 +56,10 @@ type BenchPSQL struct {
 // Run runs go test benchmarks matching regex in the current directory and writes
 // benchmark data to a PSQL database by calling WriteSet. It returns any error
 // encountered.
-func (benchdb *BenchPSQL) Run(regex string) error {
+func (benchdb *BenchPSQL) Run() error {
 	// Exec a subprocess for go test bench and write
 	// to both stdout and a byte buffer.
-	cmd := exec.Command("go", "test", "-bench", regex,
+	cmd := exec.Command("go", "test", "-bench", benchdb.Config.Regex,
 		"-test.run", "XXX", "-benchmem")
 	var out bytes.Buffer
 	cmd.Stdout = io.MultiWriter(os.Stdout, &out)
@@ -72,24 +80,6 @@ func (benchdb *BenchPSQL) Run(regex string) error {
 		return fmt.Errorf("failed to write benchSet to db: %v", err)
 	}
 	return nil
-}
-
-const nsha = 7
-
-func latestGitSha() (string, error) {
-	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to get latest git sha: %v\n", err)
-	}
-	return string(out[:nsha]), nil
-}
-
-func uuid() (string, error) {
-	b := make([]byte, 16)
-	if _, err := io.ReadFull(rand.Reader, b); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b), nil
 }
 
 // WriteSet is responsible for opening a postgres database connection and writing
@@ -116,7 +106,7 @@ func (benchdb *BenchPSQL) WriteSet(benchSet parse.Set) (int, error) {
 		n := len(b)
 		for i := 0; i < n; i++ {
 			val := b[i]
-			err := saveBenchmark(benchdb.dbConn, benchdb.TableName, batchId, *val)
+			err := benchdb.saveBenchmark(batchId, *val)
 			if err != nil {
 				return 0, fmt.Errorf("failed to save benchmark: %v", err)
 			}
@@ -126,15 +116,15 @@ func (benchdb *BenchPSQL) WriteSet(benchSet parse.Set) (int, error) {
 	return cnt, nil
 }
 
-func saveBenchmark(dbConn *sql.DB, table, batchId string, b parse.Benchmark) error {
+func (benchdb *BenchPSQL) saveBenchmark(batchId string, b parse.Benchmark) error {
 	// Create a transaction per Benchmark.
-	tx, err := dbConn.Begin()
+	tx, err := benchdb.dbConn.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	sha, err := latestGitSha()
+	sha, err := latestGitSha(benchdb.Config.ShaLen)
 	if err != nil {
 		return err
 	}
@@ -144,7 +134,7 @@ func saveBenchmark(dbConn *sql.DB, table, batchId string, b parse.Benchmark) err
         (batch_id, latest_sha, datetime, name, n, ns_op, allocated_bytes_op, allocs_op)
         VALUES
         ($1, $2, $3, $4, $5, $6, $7, $8)
-        `, table)
+        `, benchdb.TableName)
 
 	// Strips leading Benchmark string in Benchmark.Name
 	name := strings.TrimPrefix(strings.TrimSpace(b.Name), "Benchmark")
@@ -156,4 +146,20 @@ func saveBenchmark(dbConn *sql.DB, table, batchId string, b parse.Benchmark) err
 		return err
 	}
 	return tx.Commit()
+}
+
+func latestGitSha(n int) (string, error) {
+	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get latest git sha: %v\n", err)
+	}
+	return string(out[:n]), nil
+}
+
+func uuid() (string, error) {
+	b := make([]byte, 16)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
