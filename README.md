@@ -47,7 +47,7 @@ what you get when you run the command with a connection string and a sql databas
 name.
 
 ```
-$ gobenchdb --conn="postgres://yhat:foopass@/benchmarks" --table="mytable"
+$ gobenchdb -conn="postgres://yhat:foopass@/benchmarks" -table="mytable"
 PASS
 BenchmarkEndToEnd	       100	  10195771 ns/op    102.84 MB/s    1286656 B/op	      78 allocs/op
 BenchmarkMarshalKexInitMsg     200000	  8956 ns/op	    4040 B/op	   7 allocs/op
