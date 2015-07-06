@@ -10,7 +10,22 @@ sql database of your choice.
        Options:
              -conn        postgres database connection string
              -table       postgres table name
-             -test.bench  run only those benchmarks matching the regular expression`
+             -test.bench  run only those benchmarks matching the regular expression
+
+gobenchdb assumes a schema is created in a database
+
+    CREATE TABLE IF NOT EXISTS benchmarks (
+        id                    serial primary key,
+        batch_id              varchar(50),
+        latest_sha            varchar(50),
+        datetime              timestamp without time zone,
+        name                  varchar(50),
+        n                     integer,
+        ns_op                 double precision,
+        allocated_bytes_op    integer,
+        allocs_op             integer
+    );
+
 */
 package main
 
