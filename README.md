@@ -22,7 +22,7 @@ Direct downloads of compiled binaries are available at the [releases page](https
 
 # Basic Usage
 
-gobenchdb supports sqlite3 and postgres as sql database backends. 
+gobenchdb supports postgres as a sql database backend. 
 
 ```
 Usage: gobenchdb [options...]
@@ -96,4 +96,4 @@ CREATE TABLE IF NOT EXISTS ops2 (
 
 # Extending gobenchdb
 
-If you want to use gobenchdb but you wish to use a database besides postgres or sqlite3, you can implent the [BenchDB](https://godoc.org/github.com/yhat/gobenchdb/benchdb#BenchDB) interface in the [benchdb package](https://godoc.org/github.com/yhat/gobenchdb/benchdb).
+If you want to use gobenchdb but you wish to use a database besides postgres, you can implent the [BenchDB](https://godoc.org/github.com/yhat/gobenchdb/benchdb#BenchDB) interface in the [benchdb package](https://godoc.org/github.com/yhat/gobenchdb/benchdb).
