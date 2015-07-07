@@ -82,7 +82,7 @@ gobenchdb assumes a table schema of the form.
 
 ```sql
 # postgres
-CREATE TABLE IF NOT EXISTS ops2 (
+CREATE TABLE IF NOT EXISTS benchmarks (
     id                    serial primary key,
     batch_id              varchar(50),
     latest_sha            varchar(50),
