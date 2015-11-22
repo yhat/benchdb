@@ -1,9 +1,9 @@
-# gobenchdb
-Store go test bench data in a database
+# benchdb
+Stores go test bench data in a database
 
 [![GoDoc](https://godoc.org/github.com/yhat/gobenchdb?status.svg)](https://godoc.org/github.com/yhat/gobenchdb)
 
-gobenchdb is a command line tool for running and storing go benchmark data in a database.
+benchdb is a command line tool for running and storing go benchmark data in a database.
 It runs the `go test -bench` command in the current working directory and parses the output
 using the [parse package](https://godoc.org/golang.org/x/tools/benchmark/parse). The parsed
 data is then written to a sql database of your choice. 
@@ -15,17 +15,17 @@ Writing benchmark tests in go is simple. The `go test -bench` command is great, 
 If you have the go tools installed on your machine, gobenchdb can be installed using `go get`.
 
 ```
-go get github.com/yhat/gobenchdb
+go get github.com/yhat/benchdb
 ```
 
-Direct downloads of compiled binaries are available at the [releases page](https://github.com/yhat/gobenchdb/releases).
+Direct downloads of compiled binaries are available at the [releases page](https://github.com/yhat/benchdb/releases).
 
 # Basic Usage
 
-gobenchdb supports postgres as a sql database backend. 
+benchdb supports postgres as a sql database backend. 
 
 ```
-Usage: gobenchdb [options...]
+Usage: benchdb [options...]
 
 Options:
   -conn        sql database connection string
@@ -35,19 +35,19 @@ Options:
 
 # Example
 
-You can cd to any package directory that has defined benchmark tests and run gobenchdb. Lets
+You can cd to any package directory that has defined benchmark tests and run benchdb. Lets
 run a few benchmarks from the golang crypto package and store them in a database!
 
 ```
 cd $GOPATH/golang.org/src/golang.org/x/crypto/ssh
 ```
 
-gobenchdb writes to stdout and a database associated with your connection string. Here is
+benchdb writes to stdout and a database associated with your connection string. Here is
 what you get when you run the command with a connection string and a sql database table
 name.
 
 ```
-$ gobenchdb -conn="postgres://yhat:foopass@/benchmarks" -table="mytable"
+$ benchdb -conn="postgres://yhat:foopass@/benchmarks" -table="mytable"
 PASS
 BenchmarkEndToEnd	       100	  10195771 ns/op    102.84 MB/s    1286656 B/op	      78 allocs/op
 BenchmarkMarshalKexInitMsg     200000	  8956 ns/op	    4040 B/op	   7 allocs/op
@@ -71,14 +71,13 @@ benchmarks=> select * from mytable where latest_sha = 'c57d4a7';
 
 ```
 
-Each gobenchdb run is assigned a unique batch_id and the first 7 characters of the latest git sha for HEAD. This way you can group by a batch_id and
-identify separate benchmark test runs.
+Each benchdb run is assigned a unique batch_id and the first 7 characters of the latest git sha for HEAD. This way you can group by a batch_id and identify separate benchmark test runs.
 
 Thats it!
 
 # Database Schema
 
-gobenchdb assumes a table schema of the form.
+benchdb assumes a table schema of the form.
 
 ```sql
 # postgres
@@ -94,6 +93,6 @@ CREATE TABLE IF NOT EXISTS benchmarks (
     allocs_op             integer);
 ```
 
-# Extending gobenchdb
+# Extending benchdb
 
-If you want to use gobenchdb but you wish to use a database besides postgres, you can implent the [BenchDB](https://godoc.org/github.com/yhat/gobenchdb/benchdb#BenchDB) interface in the [benchdb package](https://godoc.org/github.com/yhat/gobenchdb/benchdb).
+If you want to use benchdb but you wish to use a database besides postgres, you can implent the [BenchDB](https://godoc.org/github.com/yhat/benchdb/benchdb#BenchDB) interface in the [benchdb package](https://godoc.org/github.com/yhat/benchdb/benchdb).
