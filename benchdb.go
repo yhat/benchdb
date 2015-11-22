@@ -1,18 +1,18 @@
 /*
-gobenchdb is a command line tool for running and storing go benchmark data in a
+benchdb is a command line tool for running and storing go benchmark data in a
 database. It runs the go test bench command in the current working directory
 and parses the output using the parse package. The parsed data is then written to
 sql database of your choice.
 
    Usage:
-       gobenchdb [options...]
+       benchdb [options...]
 
        Options:
              -conn        postgres database connection string
              -table       postgres table name
              -test.bench  run only those benchmarks matching the regular expression
 
-gobenchdb assumes a schema is created in a database
+benchdb assumes a schema is created in a database
 
     CREATE TABLE IF NOT EXISTS benchmarks (
         id                    serial primary key,
@@ -34,7 +34,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yhat/gobenchdb/benchdb"
+	"github.com/yhat/benchdb/benchdb"
 )
 
 var (
@@ -48,7 +48,7 @@ const Postgres = "postgres"
 
 var nsha = 7
 
-var usage = `Usage: gobenchdb [options...]
+var usage = `Usage: benchdb [options...]
 
 Options:
   -conn        postgres database connection string
